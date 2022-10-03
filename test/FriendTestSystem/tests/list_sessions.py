@@ -6,7 +6,7 @@ class TestClass:
         print('list_sessons.py created ')
 
     def generateRequest(self, additionalData ):
-        print('device_list.py: generateRequest: ' + additionalData )
+        print(f'device_list.py: generateRequest: {additionalData}')
         return '{"type":"msg","data":{"type":"request","requestid":"'+ self.reqid +'","path":"system.library/user/sessionlist","data":{"sessionid":"'+ self.sessionid +'"},"sessionid":"'+ self.sessionid +'"}}'
 
     def checkTest(self, response ):
@@ -14,5 +14,5 @@ class TestClass:
         return True
 
     def getReqid(self):
-        print('list_sessons.py: getReqid: ' + str(self.reqid) )
+        print(f'list_sessons.py: getReqid: {str(self.reqid)}')
         return self.reqid

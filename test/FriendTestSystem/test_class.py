@@ -7,7 +7,7 @@ class TestClass:
 
     @abstractmethod
     def generateRequest(self, additionalData ):
-        print('generateRequest: test_class.py: ' + additionalData )
+        print(f'generateRequest: test_class.py: {additionalData}')
         return '{}'
 
     @abstractmethod

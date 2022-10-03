@@ -22,20 +22,7 @@ from test_class import TestClass
 
 print("------------Friend Test started: " + datetime.datetime.now().strftime("%Y-%m-%d %H:%M") )
 
-PROCESS_COUNT = 1
 TEST_COUNT = 1
-MSG_INTERVAL = 1.00
-
-#if len(sys.argv) < 4:
-#    print('Usage: ./master.py host login password')
-#    sys.exit(2)
-
-HOST = "localhost"
-PORT = "6502"
-USER = "test1"
-PASS = "1_test_1"
-TEST_DIRECTORY = "tests"
-SSL = False
 WS_URL = ""
 
 #PASS = hashlib.sha256(PASS.encode('utf-8')).hexdigest()
@@ -59,24 +46,14 @@ parser.add_argument("-mi", help="Message interval - interval between test calls"
 
 args = parser.parse_args()
 
-if args.l is not None:
-    USER = args.l
-if args.p is not None:
-    PASS = args.p
-if args.ho is not None:
-    HOST = args.ho
-if args.po is not None:
-    PORT = args.po
-if args.t is not None:
-    TEST_DIRECTORY = args.t
-if args.s is not None:
-    if args.s == "true":
-        SSL = True
-if args.pc is not None:
-    PROCESS_COUNT = args.pc
-if args.mi is not None:
-    MSG_INTERVAL = float( args.mi )
-
+USER = args.l if args.l is not None else "test1"
+PASS = args.p if args.p is not None else "1_test_1"
+HOST = args.ho if args.ho is not None else "localhost"
+PORT = args.po if args.po is not None else "6502"
+TEST_DIRECTORY = args.t if args.t is not None else "tests"
+SSL = args.s is not None and args.s == "true"
+PROCESS_COUNT = args.pc if args.pc is not None else 1
+MSG_INTERVAL = float( args.mi ) if args.mi is not None else 1.00
 PASS = "HASHED" + hashlib.sha256(PASS.encode('utf-8')).hexdigest()
 
 print("--------Send request for sessionid-----")
@@ -86,14 +63,14 @@ PEM = "/home/stefkos/development/osfriend/friendup/build/cfg/crt/certificate.pem
 #
 # login user
 
-if SSL == True:
-    URL = "https://" + HOST + ":" + PORT + "/system.library/login"
-    WS_URL = "wss://" + HOST + ":6500/"
+if SSL:
+    URL = f"https://{HOST}:{PORT}/system.library/login"
+    WS_URL = f"wss://{HOST}:6500/"
     SSL_OPTS = {"cert_reqs": ssl.CERT_NONE,"ca_certs": certifi.where(),"ssl_version": ssl.PROTOCOL_TLSv1_2}
     #SSL_OPTS = {"cert_reqs": ssl.CERT_NONE,"ca_certs": certifi.where(),"ssl_version": ssl.PROTOCOL_TLS_CLIENT}
 else:
-    URL = "http://" + HOST + ":" + PORT + "/system.library/login"
-    WS_URL = "ws://" + HOST + ":6500/"
+    URL = f"http://{HOST}:{PORT}/system.library/login"
+    WS_URL = f"ws://{HOST}:6500/"
 
 SSL_OPTS = {"cert_reqs": ssl.CERT_NONE}
 
@@ -109,7 +86,7 @@ http = urllib3.PoolManager( cert_reqs='CERT_REQUIRED', ca_certs=certifi.where() 
 # sending get request and saving the response as response object
 try:
     r = requests.post(url = URL, data = PARAMS, verify=False)
- 
+
 # extracting data in json format
 
     data = r.json()
@@ -120,7 +97,7 @@ except:
     print('Http request failed\nsessionid was not returned')
     sys.exit(3)
 
-print('SessionID : ' + SESSION_ID )
+print(f'SessionID : {SESSION_ID}')
 
 #
 # global lists
@@ -141,23 +118,19 @@ def load_class( full_class_string ):
 
     #print("Load class " + full_class_string )
     class_data = full_class_string.split(".")
-    
+
     module_str = class_data[0]
     class_str = class_data[-1]
-    submodules_list = []
-
-    if len(class_data) > 2:
-        submodules_list = class_data[1:-1]
-
+    submodules_list = class_data[1:-1] if len(class_data) > 2 else []
     f, filename, description = imp.find_module(module_str)
     module = imp.load_module(module_str, f, filename, description)
-    
+
     # Find each submodule
     for smod in submodules_list:
         path = os.path.dirname(filename) if os.path.isfile(filename) else filename
 
         f, filename, description = imp.find_module(smod, [path])
-        
+
         # Now we can load the module
         try:
             module = imp.load_module(" ".join(class_data[:-1]), f, filename, description)
@@ -175,12 +148,12 @@ print("------------Load test classes----------")
 #reqid = 0
 for file in os.listdir( TEST_DIRECTORY ):
     if file.endswith(".py"):
-        lpath = os.path.join( TEST_DIRECTORY+"/", file ) 
-        lpath = lpath[:-3] + ".TestClass"
+        lpath = os.path.join(f"{TEST_DIRECTORY}/", file)
+        lpath = f"{lpath[:-3]}.TestClass"
 
         #print( lpath )
         class_ = load_class( lpath )
-        print('Added TestClass ' + str(class_) + ' path ' + lpath )
+        print(f'Added TestClass {str(class_)} path {lpath}')
         LIST_OF_CLASSES.append( class_ )
 # TEST purpose
 #        reqid = reqid + 1
@@ -198,7 +171,7 @@ MSG_LOGIN = '{"type":"con","data":{"sessionId":"%s"}}'
 
 def on_message(ws, message):
     global TEST_MSG_RETURNED, TEST_MSG_RETURNED_OK
-    print('on message: ' + message )
+    print(f'on message: {message}')
     try:
         # check connection message
         msg = message.replace('\"','')
@@ -213,7 +186,7 @@ def on_message(ws, message):
         POSEND = message[ POS: ].find('"')
 
         TEST_MSG_RETURNED += 1
-        
+
         print('on message: checking empty value')
 
         if message[ POS:(POS+POSEND) ] != "":
@@ -223,33 +196,36 @@ def on_message(ws, message):
                     result = objEntry.checkTest(message)
                     if result == True:
                         TEST_MSG_RETURNED_OK += 1
-                    print('Received message: ' + message + ' reqid ' + str(reqid) + '\nTest finished with success: ' + str(result) )
+                    print(
+                        f'Received message: {message} reqid {str(reqid)}'
+                        + '\nTest finished with success: '
+                        + str(result)
+                    )
 
-        #msg = str( message )
-        #msg = msg.replace('\\', '').replace('ok<!--separate-->','')
-        #print('msg replaced : ' + msg )
-        #data = json.loads(message)
-        #print('Json parsed ' + str(data) )
-        #if data != None:
-        #    reqid = data["reqid"]
-        #    print('Reqid found: ' + str( reqid ) )
-        #    if reqid != None:
-        #        for objEntry in LIST_OF_TESTS:
-        #            if reqid == objEntry.getReqid():
-        #                print('Received message: ' + message + ' reqid ' + reqid + ' result ' + objEntry.checkTest( message ) )
-        #else:
-        #    print('Data is null')
+
+            #msg = str( message )
+            #msg = msg.replace('\\', '').replace('ok<!--separate-->','')
+            #print('msg replaced : ' + msg )
+            #data = json.loads(message)
+            #print('Json parsed ' + str(data) )
+            #if data != None:
+            #    reqid = data["reqid"]
+            #    print('Reqid found: ' + str( reqid ) )
+            #    if reqid != None:
+            #        for objEntry in LIST_OF_TESTS:
+            #            if reqid == objEntry.getReqid():
+            #                print('Received message: ' + message + ' reqid ' + reqid + ' result ' + objEntry.checkTest( message ) )
+            #else:
+            #    print('Data is null')
     except ValueError:
         print('ValueError problem')
     except BaseException as e:
-        print('On WS message BaseException: ' + str(e) )
+        print(f'On WS message BaseException: {str(e)}')
     except:
         print("Unexpected error")
-    pass
 
 def on_error(ws, error):
-    print('On WS error: ' + str(error) )
-    pass
+    print(f'On WS error: {str(error)}')
 
 def on_close(ws):
     print('On WS close')
@@ -263,7 +239,7 @@ def on_open(ws):
     def run(*args):
         global TEST_COUNT, reqid
         global TEST_MSG_SENT, TEST_MSG_SEND       
- 
+
         msg = MSG_LOGIN % (str(SESSION_ID) )
         try:
             TEST_MSG_SENT += 1
@@ -272,14 +248,11 @@ def on_open(ws):
             print('Sent login message')
             TEST_MSG_SEND += 1
         except:
-            print('Cannot send Login message: ' + msg )
+            print(f'Cannot send Login message: {msg}')
             traceback.print_exc()
-            pass
         time.sleep(1.01)
         print('Before while')
-        while True:
-            if TEST_COUNT == 0:
-                break
+        while True and TEST_COUNT != 0:
             TEST_COUNT -= 1
             time.sleep(MSG_INTERVAL)
 
@@ -290,25 +263,20 @@ def on_open(ws):
                 object_ = classEntry( SESSION_ID, str( reqid ) )
                 LIST_OF_TESTS.append( object_ )
                 tempMsg = object_.generateRequest( str(object_) )
-                print('Send message >' + tempMsg + '<' )
+                print(f'Send message >{tempMsg}<')
                 try:
                     TEST_MSG_SENT += 1
                     ws.send(tempMsg)
                     TEST_MSG_SEND += 1
                 except:
-                    print('Cannot send message: ' + str(tempMsg) )
+                    print(f'Cannot send message: {str(tempMsg)}')
                     traceback.print_exc()
-                    pass
                 time.sleep(MSG_INTERVAL)
-            #for objEntry in LIST_OF_TESTS:
-            #    tempMsg = objEntry.generateRequest( '' )
-            #    printf('Tmp message ' + tempMsg )
-            #    ws.send(tempMsg)
-            #ws.send(MSG_TEST % (SESSION_ID, SESSION_ID))
         #time.sleep(1.0)
         print("Before close...")
         ws.close()
         print("thread terminating...")
+
     t = threading.Thread(target=run)
     t.start()
 
@@ -316,7 +284,7 @@ websocket.enableTrace(True)
 
 def child():
     global WS_URL
-    print("Using url: " + WS_URL )
+    print(f"Using url: {WS_URL}")
     ws = websocket.WebSocketApp( WS_URL,
                                 on_message = on_message,
                                 on_error = on_error,
@@ -333,7 +301,7 @@ startTime = time.process_time()
 print("-------Starting %d processes" % PROCESS_COUNT)
 
 pids = {}
-for i in range(0, PROCESS_COUNT):
+for _ in range(PROCESS_COUNT):
     try:
     #    newpid = os.fork()
     #    if newpid == 0:
@@ -358,10 +326,10 @@ while True:
     if PROCESS_COUNT == 0:
         elapsedTime = time.process_time() - startTime
         print('-------All processes ended, exiting')
-        print('Elapsed time: ' + str(elapsedTime) )
-        print('Messages sent: ' + str( TEST_MSG_SENT ) )
-        print('Messages send: ' + str( TEST_MSG_SEND ) )
-        print('Messages returned: ' + str( TEST_MSG_RETURNED ) )
-        print('Messages returned with success: ' + str( TEST_MSG_RETURNED_OK ) )
+        print(f'Elapsed time: {str(elapsedTime)}')
+        print(f'Messages sent: {str(TEST_MSG_SENT)}')
+        print(f'Messages send: {str(TEST_MSG_SEND)}')
+        print(f'Messages returned: {str(TEST_MSG_RETURNED)}')
+        print(f'Messages returned with success: {str(TEST_MSG_RETURNED_OK)}')
         exit(0)
 

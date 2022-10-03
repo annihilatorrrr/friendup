@@ -5,7 +5,7 @@ class TestClass:
         self.reqid = reqid
 
     def generateRequest(self, additionalData ):
-        print('read_disk_info.py: generateRequest: ' + additionalData )
+        print(f'read_disk_info.py: generateRequest: {additionalData}')
         return '{"type":"msg","data":{"type":"request","requestid":"' +self.reqid+ '","path":"system.library/file/read","data":{"sessionid":"'+ self.sessionid +'","path":"Home%3Adisk.info","mode":"r"},"sessionid":"'+ self.sessionid +'"}}'
 
     def checkTest(self, response ):
@@ -13,5 +13,5 @@ class TestClass:
         return True
 
     def getReqid(self):
-        print('read_disk_info.py: getReqid ' + str(self.reqid) )
+        print(f'read_disk_info.py: getReqid {str(self.reqid)}')
         return self.reqid

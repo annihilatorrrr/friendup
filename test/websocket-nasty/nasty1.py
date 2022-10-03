@@ -60,7 +60,7 @@ def child():
 
 print('Starting %d processes' % PROCESS_COUNT)
 pids = {}
-for i in range(0, PROCESS_COUNT):
+for _ in range(PROCESS_COUNT):
     newpid = os.fork()
     if newpid == 0:
         child()

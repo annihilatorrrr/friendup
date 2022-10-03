@@ -36,12 +36,10 @@ print(""" __          ________ ____   _____  ____   _____ _  ________ _______
  |_| \_/_/    \_\_____/   |_|     |_|""")
 
 def on_message(ws, message):
-    print("ON_MESSAGE " + message )
-    pass
+    print(f"ON_MESSAGE {message}")
 
 def on_error(ws, error):
     print("PID %d error %s" % (os.getpid(), error))
-    pass
 
 def on_close(ws):
     print("socket closed (PID %d)" % os.getpid())
@@ -72,7 +70,7 @@ def child():
 
 print('Starting %d processes' % PROCESS_COUNT)
 pids = {}
-for i in range(0, PROCESS_COUNT):
+for _ in range(PROCESS_COUNT):
     newpid = os.fork()
     if newpid == 0:
         child()

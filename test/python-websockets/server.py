@@ -13,9 +13,7 @@ def ping_handler(signum, frame):
     print("Got SIGUSR2!")
     global PING_INDEX
     PING_INDEX += 1
-    j = {}
-    j['t'] = 'ping'
-    j['i'] = PING_INDEX
+    j = {'t': 'ping', 'i': PING_INDEX}
     server.send_message_to_all(json.dumps(j))
 
 signal.signal(signal.SIGUSR1, handler)
@@ -34,15 +32,15 @@ def client_left(client, server):
 
 # Called when a client sends a message
 def message_received(client, server, message):
-	if len(message) > 200:
-		message = message[:200]+'..'
-	print("Client(%d) said: %s" % (client['id'], message))
+    if len(message) > 200:
+        message = f'{message[:200]}..'
+    print("Client(%d) said: %s" % (client['id'], message))
 
 def input_thread():
     print("Starting input thread")
     while True:
         message = input()
-        print("Sending " + message)
+        print(f"Sending {message}")
         server.send_message_to_all(message)
 
 thread = Thread(target = input_thread)

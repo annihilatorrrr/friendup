@@ -182,10 +182,7 @@ class WebSocketHandler(StreamRequestHandler):
     def read_bytes(self, num):
         # python3 gives ordinal of byte directly
         bytes = self.rfile.read(num)
-        if sys.version_info[0] < 3:
-            return map(ord, bytes)
-        else:
-            return bytes
+        return map(ord, bytes) if sys.version_info[0] < 3 else bytes
 
     def read_next_message(self):
         try:
@@ -223,7 +220,7 @@ class WebSocketHandler(StreamRequestHandler):
         elif opcode == OPCODE_PONG:
             opcode_handler = self.server._pong_received_
         else:
-            logger.warn("Unknown opcode %#x." + opcode)
+            logger.warn(f"Unknown opcode %#x.{opcode}")
             self.keep_alive = 0
             return
 
@@ -257,11 +254,9 @@ class WebSocketHandler(StreamRequestHandler):
             if not message:
                 logger.warning("Can\'t send message, message is not valid UTF-8")
                 return False
-        elif sys.version_info < (3,0) and (isinstance(message, str) or isinstance(message, unicode)):
+        elif sys.version_info < (3, 0) and (isinstance(message, (str, unicode))):
             pass
-        elif isinstance(message, str):
-            pass
-        else:
+        elif not isinstance(message, str):
             logger.warning('Can\'t send message, message has to be a string or bytes. Given type is %s' % type(message))
             return False
 
@@ -274,13 +269,11 @@ class WebSocketHandler(StreamRequestHandler):
             header.append(FIN | opcode)
             header.append(payload_length)
 
-        # Extended payload
         elif payload_length >= 126 and payload_length <= 65535:
             header.append(FIN | opcode)
             header.append(PAYLOAD_LEN_EXT16)
             header.extend(struct.pack(">H", payload_length))
 
-        # Huge extended payload
         elif payload_length < 18446744073709551616:
             header.append(FIN | opcode)
             header.append(PAYLOAD_LEN_EXT64)
@@ -288,8 +281,6 @@ class WebSocketHandler(StreamRequestHandler):
 
         else:
             raise Exception("Message is too big. Consider breaking it into chunks.")
-            return
-
         self.request.send(header + payload)
 
     def handshake(self):
@@ -300,7 +291,7 @@ class WebSocketHandler(StreamRequestHandler):
             return
         key = re.search('\n[sS]ec-[wW]eb[sS]ocket-[kK]ey[\s]*:[\s]*(.*)\r\n', message)
         if key:
-            key = key.group(1)
+            key = key[1]
         else:
             logger.warning("Client tried to connect but was missing a key")
             self.keep_alive = False
@@ -332,11 +323,10 @@ def encode_to_UTF8(data):
     try:
         return data.encode('UTF-8')
     except UnicodeEncodeError as e:
-        logger.error("Could not encode data to UTF-8 -- %s" % e)
+        logger.error(f"Could not encode data to UTF-8 -- {e}")
         return False
     except Exception as e:
         raise(e)
-        return False
 
 
 def try_decode_UTF8(data):

@@ -42,7 +42,7 @@ def parseCommandLine():
 		if(sys.argv[i] == '--host'):
 			remoteAddress = str(sys.argv[i+1])
 			i=i+1
-		if(sys.argv[i] == '--port' or sys.argv[i] == '-p'):
+		if sys.argv[i] in ['--port', '-p']:
 			remotePort = int(sys.argv[i+1])
 		if(sys.argv[i] == '-h'):
 			"""TODO: add the help message"""
@@ -53,7 +53,7 @@ def parseCommandLine():
 
 def buildnormal(size):
 	out_str = ''
-	for i in range(0, size):
+	for _ in range(size):
 		a = random.randint(65, 90)
 		out_str += chr(a)
 		a = random.randint(97, 122)
@@ -63,7 +63,7 @@ def buildnormal(size):
 	
 def builderror(size):
 	out_str = ''
-	for i in range(0, size):
+	for _ in range(size):
 		a = random.randint(0, 1)
 		out_str += chr(a)
 		a = random.randint(2, 47)
